@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 20% 97%;
+    --foreground: 25 30% 10%;
+
+    --card: 30 25% 100%;
+    --card-foreground: 25 30% 10%;
+
+    --popover: 30 25% 100%;
+    --popover-foreground: 25 30% 10%;
+
+    --primary: 152 55% 32%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 152 50% 42%;
+
+    --secondary: 30 30% 94%;
+    --secondary-foreground: 25 20% 20%;
+
+    --muted: 30 15% 93%;
+    --muted-foreground: 25 10% 45%;
+
+    --accent: 30 40% 92%;
+    --accent-foreground: 25 30% 20%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 80% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 152 55% 32%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 152 55% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 30% 94%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 152 55% 32%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  html {
+    overscroll-behavior: none;
+    height: 100%;
+  }
+
+  body {
+    overscroll-behavior-y: contain;
+    user-select: none;
+    -webkit-user-select: none;
+    min-height: 100%;
+    min-height: 100dvh;
+  }
+
+  @media (display-mode: standalone) {
+    body {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+    }
+  }
+
+  input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+}
+
+@layer utilities {
+  .status-recebido {
+    @apply bg-amber-100 text-amber-800;
+  }
+  .status-em_preparo {
+    @apply bg-blue-100 text-blue-800;
+  }
+  .status-saiu_entrega {
+    @apply bg-purple-100 text-purple-800;
+  }
+  .status-entregue {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+  .status-pendente {
+    @apply bg-amber-100 text-amber-800;
+  }
+  .status-pago {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+  .status-recusado {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .text-gradient-warm {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Splash screen animation */
+@keyframes splash-logo-enter {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes splash-text-enter {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splash-fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.splash-logo-animate {
+  animation: splash-logo-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.splash-text-animate {
+  animation: splash-text-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+  opacity: 0;
+}
+
+.splash-fade-out {
+  animation: splash-fade-out 0.5s ease-out forwards;
+}
+
+/* Smooth scroll for categories */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Shimmer effect for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Pulse for CTA */
+@keyframes pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* ── iFood-style utilities ── */
+
+.ifood-category-btn {
+  @apply px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200 border;
+}
+
+.ifood-category-active {
+  @apply bg-primary text-primary-foreground border-primary;
+}
+
+.ifood-category-inactive {
+  @apply bg-card text-foreground border-border hover:border-primary/30;
+}
+
+.ifood-skeleton {
+  @apply bg-muted rounded-lg animate-skeleton-pulse;
+}
+
+.ifood-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-card border-t;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.ifood-header {
+  @apply sticky top-0 z-40 bg-card border-b h-14;
+}
