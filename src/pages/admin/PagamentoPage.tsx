@@ -46,13 +46,21 @@ const PagamentoPage = () => {
     toast.success("Configurações de pagamento salvas!");
   };
 
-  const updatePaymentStatus = async (id: string, status: "pago" | "recusado") => {
-    const { error } = await supabase.from("pagamentos").update({ 
-      status, 
-      data_pagamento: status === "pago" ? new Date().toISOString() : null 
-    }).eq("id", id);
-    if (error) toast.error("Erro ao atualizar");
-    else toast.success(status === "pago" ? "Pagamento confirmado!" : "Pagamento recusado");
+  const updatePaymentStatus = async (p: any, status: "pago" | "recusado") => {
+    if (p.metodo === "pix" && status === "pago") {
+      const { error: fnErr } = await supabase.functions.invoke("mercado-pago", {
+        body: { action: "confirm_pix", pedido_id: p.pedido_id },
+      });
+      if (fnErr) { toast.error("Erro ao confirmar"); return; }
+      toast.success("Pix confirmado!");
+    } else {
+      const { error } = await supabase.from("pagamentos").update({ 
+        status, 
+        data_pagamento: status === "pago" ? new Date().toISOString() : null 
+      }).eq("id", p.id);
+      if (error) toast.error("Erro ao atualizar");
+      else toast.success(status === "pago" ? "Pagamento confirmado!" : "Pagamento recusado");
+    }
   };
 
   const statusIcon = (s: string) => {
@@ -179,12 +187,23 @@ const PagamentoPage = () => {
                 <p className="font-display font-bold text-sm tabular-nums">
                   R$ {Number(p.pedidos?.valor_total || 0).toFixed(2).replace(".", ",")}
                 </p>
+                {p.metodo && (
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                    p.metodo === "pix" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                    p.metodo === "cartao" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                    "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                  }`}>
+                    {p.metodo === "pix" ? <QrCode className="w-3.5 h-3.5" /> :
+                     p.metodo === "cartao" ? <CreditCard className="w-3.5 h-3.5" /> :
+                     <DollarSign className="w-3.5 h-3.5" />}
+                  </div>
+                )}
                 {p.status === "pendente" && (
                   <div className="flex gap-1">
-                    <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-emerald-600" onClick={() => updatePaymentStatus(p.id, "pago")}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-emerald-600" onClick={() => updatePaymentStatus(p, "pago")}>
                       ✓ Pago
                     </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-destructive" onClick={() => updatePaymentStatus(p.id, "recusado")}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-destructive" onClick={() => updatePaymentStatus(p, "recusado")}>
                       ✗
                     </Button>
                   </div>

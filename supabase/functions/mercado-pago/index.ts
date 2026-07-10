@@ -50,35 +50,34 @@ Deno.serve(async (req) => {
     const amount = valor || Number(pedido.valor_total);
 
     if (action === "pix") {
-      // Create Pix payment
       const mpRes = await fetch(`${MP_API}/v1/payments`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${MP_TOKEN}`,
           "Content-Type": "application/json",
-          "X-Idempotency-Key": `pix-${pedido_id}-${Date.now()}`,
+          "X-Idempotency-Key": `pix-${pedido_id}`,
         },
         body: JSON.stringify({
           transaction_amount: amount,
-          description: `Pedido #${pedido_id.slice(0, 8)} - Gestar One Food`,
+          description: `Pedido #${pedido_id.slice(0, 8)} - Doce & Poesia`,
           payment_method_id: "pix",
-          payer: { email: payer_email || "cliente@gestarfood.com" },
+          payment_type_id: "bank_transfer",
+          payer: { email: payer_email || "cliente@docepoesia.com" },
         }),
       });
 
       const mpData = await mpRes.json();
-
       if (!mpRes.ok) {
         return new Response(JSON.stringify({ error: "Mercado Pago error", details: mpData }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Update payment record
-      await supabase.from("pagamentos").update({
-        status: mpData.status === "approved" ? "pago" : "pendente",
+      await supabase.from("pagamentos").upsert({
+        pedido_id,
+        status: "pendente",
         metodo: "pix",
-      }).eq("pedido_id", pedido_id);
+      }, { onConflict: "pedido_id", ignoreDuplicates: false });
 
       return new Response(JSON.stringify({
         success: true,
@@ -108,11 +107,11 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           transaction_amount: amount,
-          description: `Pedido #${pedido_id.slice(0, 8)} - Gestar One Food`,
+          description: `Pedido #${pedido_id.slice(0, 8)} - Doce & Poesia`,
           token: card_token,
           installments: installments || 1,
           payment_method_id: metodo || "visa",
-          payer: { email: payer_email || "cliente@gestarfood.com" },
+          payer: { email: payer_email || "cliente@docepoesia.com" },
         }),
       });
 
@@ -142,23 +141,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === "check_status") {
-      // Check payment status from Mercado Pago
+    if (action === "check_pix") {
       const { data: pagamento } = await supabase
         .from("pagamentos")
-        .select("*")
+        .select("metodo, status")
         .eq("pedido_id", pedido_id)
         .single();
-
-      return new Response(JSON.stringify({
-        status: pagamento?.status || "pendente",
-        metodo: pagamento?.metodo,
-      }), {
+      return new Response(JSON.stringify({ status: pagamento?.status || "pendente" }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action. Use: pix, card, check_status" }), {
+    if (action === "confirm_pix") {
+      await supabase.from("pagamentos").upsert({
+        pedido_id,
+        status: "pago",
+        metodo: "pix",
+        data_pagamento: new Date().toISOString(),
+      }, { onConflict: "pedido_id" });
+      await supabase.from("pedidos").update({ status: "recebido" }).eq("id", pedido_id);
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Invalid action. Use: pix, card, check_pix, confirm_pix" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
