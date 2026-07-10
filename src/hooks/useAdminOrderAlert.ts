@@ -2,6 +2,22 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+let alertCtx: AudioContext | null = null;
+
+function getAlertCtx(): AudioContext | null {
+  try {
+    if (!alertCtx || alertCtx.state === "closed") {
+      alertCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (alertCtx.state === "suspended") {
+      alertCtx.resume();
+    }
+    return alertCtx;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Plays an urgent iFood-style repeating alert sound for new orders.
  * Uses Web Audio API — no external files needed.
@@ -9,46 +25,39 @@ import { toast } from "sonner";
  */
 function playOrderAlert(): () => void {
   let stopped = false;
-  let ctx: AudioContext | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   const play = () => {
     if (stopped) return;
     try {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = getAlertCtx();
+      if (!ctx) return;
       const now = ctx.currentTime;
 
-      // Three-tone ascending chime (like iFood alert)
       const tones = [
         { freq: 880, start: 0, dur: 0.12 },
         { freq: 1175, start: 0.13, dur: 0.12 },
         { freq: 1397, start: 0.26, dur: 0.18 },
-        // Repeat pattern
         { freq: 880, start: 0.55, dur: 0.12 },
         { freq: 1175, start: 0.68, dur: 0.12 },
         { freq: 1397, start: 0.81, dur: 0.18 },
       ];
 
       tones.forEach(({ freq, start, dur }) => {
-        const osc = ctx!.createOscillator();
-        const gain = ctx!.createGain();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = "sine";
         osc.frequency.setValueAtTime(freq, now + start);
         gain.gain.setValueAtTime(0, now + start);
         gain.gain.linearRampToValueAtTime(0.8, now + start + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
         osc.connect(gain);
-        gain.connect(ctx!.destination);
+        gain.connect(ctx.destination);
         osc.start(now + start);
         osc.stop(now + start + dur);
       });
 
-      // Repeat every 3 seconds for up to 30 seconds
-      setTimeout(() => {
-        if (!stopped) {
-          ctx?.close();
-          play();
-        }
-      }, 3000);
+      timer = setTimeout(play, 3000);
     } catch {
       // Audio not available
     }
@@ -58,7 +67,7 @@ function playOrderAlert(): () => void {
 
   return () => {
     stopped = true;
-    ctx?.close();
+    if (timer) clearTimeout(timer);
   };
 }
 

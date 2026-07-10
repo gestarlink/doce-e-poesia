@@ -1,10 +1,27 @@
+let sharedCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  try {
+    if (!sharedCtx) {
+      sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedCtx.state === "suspended") {
+      sharedCtx.resume();
+    }
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Plays a pleasant notification chime using the Web Audio API.
  * No external audio file needed — generates a two-tone "ding" programmatically.
  */
 export function playNotificationSound() {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
     const playTone = (freq: number, startTime: number, duration: number) => {
       const osc = ctx.createOscillator();
@@ -25,12 +42,8 @@ export function playNotificationSound() {
     };
 
     const now = ctx.currentTime;
-    // Two-tone chime: C6 → E6
     playTone(1047, now, 0.15);
     playTone(1319, now + 0.12, 0.2);
-
-    // Close context after sound finishes
-    setTimeout(() => ctx.close(), 500);
   } catch {
     // Silently fail if audio not available
   }

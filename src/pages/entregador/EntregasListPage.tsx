@@ -37,9 +37,24 @@ const EntregasListPage = () => {
     setLoading(false);
   };
 
+let sharedCtx: AudioContext | null = null;
+
+function getAlertCtx(): AudioContext | null {
+  try {
+    if (!sharedCtx || sharedCtx.state === "closed") {
+      sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedCtx.state === "suspended") {
+      sharedCtx.resume();
+    }
+    return sharedCtx;
+  } catch { return null; }
+}
+
   const playAlertSound = () => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = getAlertCtx();
+      if (!ctx) return;
       const playTone = (freq: number, start: number, dur: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -59,7 +74,6 @@ const EntregasListPage = () => {
       playTone(880, 0.55, 0.12);
       playTone(1175, 0.68, 0.12);
       playTone(1397, 0.81, 0.18);
-      setTimeout(() => ctx.close(), 1500);
     } catch {}
   };
 
