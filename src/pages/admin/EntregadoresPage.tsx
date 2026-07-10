@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,23 @@ const EntregadoresPage = () => {
   const [selectedDriver, setSelectedDriver] = useState<Entregador | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
+  const leafletRef = useRef<any>(null);
   const detailMapRef = useRef<HTMLDivElement>(null);
   const detailMapInstanceRef = useRef<any>(null);
+  const detailMarkerRef = useRef<any>(null);
+
+  const updateDriverLocation = useCallback((userId: string, lat: number, lng: number) => {
+    setEntregadores(prev => prev.map(d =>
+      d.user_id === userId
+        ? { ...d, lat, lng, lastSeen: new Date().toISOString() }
+        : d
+    ));
+    // Also update detail map marker if this driver is selected
+    if (selectedDriver?.user_id === userId && detailMarkerRef.current) {
+      detailMarkerRef.current.setLatLng([lat, lng]);
+    }
+  }, [selectedDriver?.user_id]);
 
   const fetchEntregadores = async () => {
     const { data: allProfiles } = await supabase
@@ -45,22 +60,15 @@ const EntregadoresPage = () => {
 
     const userIds = profiles.map(p => p.user_id);
 
-    const { data: locations } = await supabase
-      .from("entregador_localizacao")
-      .select("entregador_id, latitude, longitude, updated_at, pedido_id")
-      .in("entregador_id", userIds);
-
     const { data: pedidos } = await supabase
       .from("pedidos")
       .select("id, endereco, status, entregador_id")
       .in("entregador_id", userIds)
       .eq("status", "saiu_entrega");
 
-    const locMap = new Map((locations || []).map(l => [l.entregador_id, l]));
     const pedidoMap = new Map((pedidos || []).map(p => [p.entregador_id!, p]));
 
     const mapped: Entregador[] = profiles.map(p => {
-      const loc = locMap.get(p.user_id);
       const ped = pedidoMap.get(p.user_id);
       return {
         user_id: p.user_id,
@@ -68,9 +76,9 @@ const EntregadoresPage = () => {
         email: p.email,
         telefone: p.telefone,
         heartbeat: p.updated_at || null,
-        lat: loc ? Number(loc.latitude) : null,
-        lng: loc ? Number(loc.longitude) : null,
-        lastSeen: loc?.updated_at || null,
+        lat: null,
+        lng: null,
+        lastSeen: null,
         pedido_id: ped?.id || null,
         pedido_endereco: ped?.endereco || null,
         pedido_status: ped?.status || null,
@@ -83,14 +91,23 @@ const EntregadoresPage = () => {
 
   useEffect(() => {
     fetchEntregadores();
-    const ch1 = supabase.channel("admin-drivers-loc")
-      .on("postgres_changes", { event: "*", schema: "public", table: "entregador_localizacao" }, () => fetchEntregadores())
-      .subscribe();
-    const ch2 = supabase.channel("admin-drivers-ped")
+    const chPedidos = supabase.channel("admin-drivers-ped")
       .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => fetchEntregadores())
       .subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, []);
+
+    // Listen for real-time location broadcasts from entregadores
+    const chLocation = supabase.channel("location-broadcast", {
+      config: { broadcast: { self: false } },
+    });
+    chLocation.on("broadcast", { event: "location_update" }, (payload) => {
+      const { user_id, lat, lng } = payload.payload;
+      if (user_id && lat != null && lng != null) {
+        updateDriverLocation(user_id, Number(lat), Number(lng));
+      }
+    }).subscribe();
+
+    return () => { supabase.removeChannel(chPedidos); supabase.removeChannel(chLocation); };
+  }, [updateDriverLocation]);
 
   const isOnline = (entregador: Entregador) => {
     const ref = entregador.lastSeen || entregador.heartbeat;
@@ -105,44 +122,67 @@ const EntregadoresPage = () => {
 
   // Main map showing all active drivers
   useEffect(() => {
-    if (!mapRef.current || activeDrivers.length === 0) {
-      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
-      return;
-    }
+    if (!mapRef.current) return;
 
     const loadMap = async () => {
       const L = await import("leaflet");
       await import("leaflet/dist/leaflet.css");
 
       if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
+      markersRef.current.clear();
 
       const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false })
         .setView([-23.5505, -46.6333], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
+      leafletRef.current = L;
 
-      const bounds: [number, number][] = [];
-
-      activeDrivers.forEach(d => {
-        if (d.lat && d.lng) {
-          const icon = L.divIcon({
-            className: "",
-            html: `<div style="display:flex;align-items:center;justify-content:center;background:#22c55e;border:3px solid white;border-radius:50%;width:36px;height:36px;box-shadow:0 2px 12px rgba(0,0,0,0.35);font-size:18px;">🛵</div>`,
-            iconSize: [36, 36], iconAnchor: [18, 18],
-          });
-          L.marker([d.lat, d.lng], { icon })
-            .addTo(map)
-            .bindPopup(`🛵 ${d.nome}<br>📦 Pedido #${d.pedido_id?.slice(0, 8)}<br>📍 ${d.pedido_endereco}`);
-          bounds.push([d.lat, d.lng]);
-        }
-      });
-
-      if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40] });
       mapInstanceRef.current = map;
     };
 
     loadMap();
-    return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
+    return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; markersRef.current.clear(); } };
+  }, []);
+
+  // Update or add markers when active drivers change location
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const L = leafletRef.current;
+    if (!map || !L) return;
+
+    const activeUserIds = new Set(activeDrivers.map(d => d.user_id));
+
+    // Remove markers for drivers no longer active
+    for (const [userId, marker] of markersRef.current.entries()) {
+      if (!activeUserIds.has(userId)) {
+        map.removeLayer(marker);
+        markersRef.current.delete(userId);
+      }
+    }
+
+    const bounds: [number, number][] = [];
+
+    activeDrivers.forEach(d => {
+      if (!d.lat || !d.lng) return;
+
+      let marker = markersRef.current.get(d.user_id);
+      if (marker) {
+        marker.setLatLng([d.lat, d.lng]);
+      } else {
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="display:flex;align-items:center;justify-content:center;background:#22c55e;border:3px solid white;border-radius:50%;width:36px;height:36px;box-shadow:0 2px 12px rgba(0,0,0,0.35);font-size:18px;">🛵</div>`,
+          iconSize: [36, 36], iconAnchor: [18, 18],
+        });
+        marker = L.marker([d.lat, d.lng], { icon })
+          .addTo(map)
+          .bindPopup(`🛵 ${d.nome}<br>📦 Pedido #${d.pedido_id?.slice(0, 8)}<br>📍 ${d.pedido_endereco}`);
+        markersRef.current.set(d.user_id, marker);
+      }
+      bounds.push([d.lat, d.lng]);
+    });
+
+    if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40] });
   }, [activeDrivers.map(d => `${d.user_id}-${d.lat}-${d.lng}`).join(",")]);
 
   // Detail map for selected driver
@@ -155,6 +195,7 @@ const EntregadoresPage = () => {
     const loadDetailMap = async () => {
       const L = await import("leaflet");
       await import("leaflet/dist/leaflet.css");
+      leafletRef.current = L;
 
       if (detailMapInstanceRef.current) { detailMapInstanceRef.current.remove(); detailMapInstanceRef.current = null; }
 
@@ -167,7 +208,7 @@ const EntregadoresPage = () => {
         html: `<div style="display:flex;align-items:center;justify-content:center;background:#22c55e;border:3px solid white;border-radius:50%;width:44px;height:44px;box-shadow:0 2px 12px rgba(0,0,0,0.35);font-size:22px;">🛵</div>`,
         iconSize: [44, 44], iconAnchor: [22, 22],
       });
-      L.marker([selectedDriver.lat!, selectedDriver.lng!], { icon }).addTo(map)
+      detailMarkerRef.current = L.marker([selectedDriver.lat!, selectedDriver.lng!], { icon }).addTo(map)
         .bindPopup(`🛵 ${selectedDriver.nome}`).openPopup();
 
       detailMapInstanceRef.current = map;
@@ -175,7 +216,7 @@ const EntregadoresPage = () => {
 
     loadDetailMap();
     return () => { if (detailMapInstanceRef.current) { detailMapInstanceRef.current.remove(); detailMapInstanceRef.current = null; } };
-  }, [selectedDriver?.user_id, selectedDriver?.lat, selectedDriver?.lng]);
+  }, [selectedDriver?.user_id]);
 
   if (loading) return <div className="container py-6"><div className="animate-pulse space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-muted rounded-xl" />)}</div></div>;
 

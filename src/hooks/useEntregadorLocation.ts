@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -7,19 +7,10 @@ type LocationStatus = "sharing" | "unavailable" | "denied" | "unsupported";
 export function useEntregadorLocation() {
   const { user, profile, isDevEntregador } = useAuth();
   const [status, setStatus] = useState<LocationStatus>("unavailable");
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
   const watchIdRef = useRef<number | null>(null);
-  const lastPosRef = useRef<{ lat: number; lng: number } | null>(null);
-  const sendRef = useRef<boolean>(true);
-
-  const sendLocation = useCallback(async (lat: number, lng: number) => {
-    if (!user || !sendRef.current) return;
-    await supabase.from("entregador_localizacao").upsert({
-      entregador_id: user.id,
-      latitude: lat,
-      longitude: lng,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "entregador_id" });
-  }, [user]);
+  const broadcastRef = useRef<boolean>(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     const isEntregador = profile?.tipo === "entregador";
@@ -28,7 +19,13 @@ export function useEntregadorLocation() {
       return;
     }
 
-    sendRef.current = true;
+    broadcastRef.current = true;
+
+    // Create a broadcast channel for real-time location sharing
+    channelRef.current = supabase.channel("location-broadcast", {
+      config: { broadcast: { self: true } },
+    });
+    channelRef.current.subscribe();
 
     if (!("geolocation" in navigator)) {
       setStatus("unsupported");
@@ -39,9 +36,22 @@ export function useEntregadorLocation() {
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        lastPosRef.current = { lat, lng };
+        setPosition({ lat, lng });
         setStatus("sharing");
-        sendLocation(lat, lng);
+
+        // Broadcast to all clients (admin, customer tracking)
+        if (broadcastRef.current) {
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "location_update",
+            payload: {
+              user_id: user.id,
+              lat,
+              lng,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
@@ -54,13 +64,17 @@ export function useEntregadorLocation() {
     );
 
     return () => {
-      sendRef.current = false;
+      broadcastRef.current = false;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user?.id, profile?.tipo, isDevEntregador, sendLocation]);
+  }, [user?.id, profile?.tipo, isDevEntregador]);
 
-  return { status, position: lastPosRef.current };
+  return { status, position };
 }

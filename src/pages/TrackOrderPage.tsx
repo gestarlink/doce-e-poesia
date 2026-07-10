@@ -117,17 +117,23 @@ const DeliveryMap = ({ order }: { order: Order }) => {
       map.fitBounds([[custLat, custLng], [lat, lng]], { padding: [60, 60], maxZoom: 16, animate: true });
     };
 
-    const ch1 = supabase
-      .channel(`track-loc-${order.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "entregador_localizacao", filter: `pedido_id=eq.${order.id}` },
-        (payload) => { const d = payload.new as any; if (d?.latitude && d?.longitude) updateMarker(Number(d.latitude), Number(d.longitude)); }
-      ).subscribe();
-    const ch2 = supabase
+    const chBroadcast = supabase.channel("location-broadcast", {
+      config: { broadcast: { self: false } },
+    });
+    chBroadcast.on("broadcast", { event: "location_update" }, (payload) => {
+      const { user_id, lat, lng } = payload.payload;
+      if (user_id && lat != null && lng != null) {
+        // The entregador_id on the order should match the broadcast user_id
+        updateMarker(Number(lat), Number(lng));
+      }
+    }).subscribe();
+
+    const chPedidos = supabase
       .channel(`track-ped-${order.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "pedidos", filter: `id=eq.${order.id}` },
         (payload) => { const d = payload.new as any; if (d?.entregador_lat && d?.entregador_lng) updateMarker(Number(d.entregador_lat), Number(d.entregador_lng)); }
       ).subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+    return () => { supabase.removeChannel(chBroadcast); supabase.removeChannel(chPedidos); };
   }, [order?.id, order?.status]);
 
   return <div ref={mapRef} className="w-full h-full" />;
