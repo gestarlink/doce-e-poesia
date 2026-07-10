@@ -115,74 +115,81 @@ const EntregaAtivaPage = () => {
         mapInstanceRef.current = null;
       }
 
-      if (!order.latitude || !order.longitude) return;
-
-      const custLat = Number(order.latitude);
-      const custLng = Number(order.longitude);
+      const hasCustCoords = !!order.latitude && !!order.longitude;
+      const custLat = hasCustCoords ? Number(order.latitude) : (myPos?.lat || -23.5505);
+      const custLng = hasCustCoords ? Number(order.longitude) : (myPos?.lng || -46.6333);
 
       const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false })
-        .setView([myPos.lat, myPos.lng], 15);
+        .setView([myPos?.lat || custLat, myPos?.lng || custLng], 15);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // Customer marker
-      const custIcon = L.divIcon({
-        className: "",
-        html: `<div style="display:flex;align-items:center;justify-content:center;background:#ef4444;border:3px solid white;border-radius:50%;width:32px;height:32px;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:16px;">📍</div>`,
-        iconSize: [32, 32], iconAnchor: [16, 16],
-      });
-      L.marker([custLat, custLng], { icon: custIcon }).addTo(map).bindPopup("📍 Cliente");
-
-      // My marker
-      const myIcon = L.divIcon({
-        className: "",
-        html: `<div style="display:flex;align-items:center;justify-content:center;background:#22c55e;border:3px solid white;border-radius:50%;width:44px;height:44px;box-shadow:0 2px 12px rgba(0,0,0,0.35);font-size:22px;">🛵</div>`,
-        iconSize: [44, 44], iconAnchor: [22, 22],
-      });
-      myMarkerRef.current = L.marker([myPos.lat, myPos.lng], { icon: myIcon }).addTo(map);
-
-      // Routing
-      try {
-        const routing = (L as any).Routing.control({
-          waypoints: [L.latLng(myPos.lat, myPos.lng), L.latLng(custLat, custLng)],
-          routeWhileDragging: false,
-          addWaypoints: false,
-          draggableWaypoints: false,
-          fitSelectedRoutes: true,
-          showAlternatives: false,
-          show: false,
-          createMarker: () => null,
-          lineOptions: {
-            styles: [
-              { color: "#3b82f6", weight: 6, opacity: 0.8 },
-              { color: "#1d4ed8", weight: 2, opacity: 0.4 },
-            ],
-            extendToWaypoints: true,
-            missingRouteTolerance: 0,
-          },
-          router: (L as any).Routing.osrmv1({
-            serviceUrl: "https://router.project-osrm.org/route/v1",
-          }),
-        }).addTo(map);
-
-        routing.on("routesfound", (e: any) => {
-          const route = e.routes[0];
-          const distKm = (route.summary.totalDistance / 1000).toFixed(1);
-          const timeMin = Math.ceil(route.summary.totalTime / 60);
-          const firstInstruction = route.instructions?.[0]?.text || "Siga em frente";
-          setRouteInfo({ distance: `${distKm} km`, time: `${timeMin} min`, instruction: firstInstruction });
+      // Customer marker (only if real coordinates exist)
+      if (hasCustCoords) {
+        const custIcon = L.divIcon({
+          className: "",
+          html: `<div style="display:flex;align-items:center;justify-content:center;background:#ef4444;border:3px solid white;border-radius:50%;width:32px;height:32px;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:16px;">📍</div>`,
+          iconSize: [32, 32], iconAnchor: [16, 16],
         });
-
-        routingRef.current = routing;
-      } catch (err) {
-        console.error("Routing error:", err);
-        L.polyline([[myPos.lat, myPos.lng], [custLat, custLng]], {
-          color: "#3b82f6", weight: 4, opacity: 0.7, dashArray: "10, 10",
-        }).addTo(map);
+        L.marker([custLat, custLng], { icon: custIcon }).addTo(map).bindPopup("📍 Cliente");
       }
 
-      map.fitBounds([[myPos.lat, myPos.lng], [custLat, custLng]], { padding: [50, 50] });
+      // My marker
+      if (myPos) {
+        const myIcon = L.divIcon({
+          className: "",
+          html: `<div style="display:flex;align-items:center;justify-content:center;background:#22c55e;border:3px solid white;border-radius:50%;width:44px;height:44px;box-shadow:0 2px 12px rgba(0,0,0,0.35);font-size:22px;">🛵</div>`,
+          iconSize: [44, 44], iconAnchor: [22, 22],
+        });
+        myMarkerRef.current = L.marker([myPos.lat, myPos.lng], { icon: myIcon }).addTo(map);
+      }
+
+      // Routing (only if we have both GPS position and customer coordinates)
+      if (myPos && hasCustCoords) {
+        try {
+          const routing = (L as any).Routing.control({
+            waypoints: [L.latLng(myPos.lat, myPos.lng), L.latLng(custLat, custLng)],
+            routeWhileDragging: false,
+            addWaypoints: false,
+            draggableWaypoints: false,
+            fitSelectedRoutes: true,
+            showAlternatives: false,
+            show: false,
+            createMarker: () => null,
+            lineOptions: {
+              styles: [
+                { color: "#3b82f6", weight: 6, opacity: 0.8 },
+                { color: "#1d4ed8", weight: 2, opacity: 0.4 },
+              ],
+              extendToWaypoints: true,
+              missingRouteTolerance: 0,
+            },
+            router: (L as any).Routing.osrmv1({
+              serviceUrl: "https://router.project-osrm.org/route/v1",
+            }),
+          }).addTo(map);
+
+          routing.on("routesfound", (e: any) => {
+            const route = e.routes[0];
+            const distKm = (route.summary.totalDistance / 1000).toFixed(1);
+            const timeMin = Math.ceil(route.summary.totalTime / 60);
+            const firstInstruction = route.instructions?.[0]?.text || "Siga em frente";
+            setRouteInfo({ distance: `${distKm} km`, time: `${timeMin} min`, instruction: firstInstruction });
+          });
+
+          routingRef.current = routing;
+        } catch (err) {
+          console.error("Routing error:", err);
+          L.polyline([[myPos.lat, myPos.lng], [custLat, custLng]], {
+            color: "#3b82f6", weight: 4, opacity: 0.7, dashArray: "10, 10",
+          }).addTo(map);
+        }
+      }
+
+      if (myPos && hasCustCoords) {
+        map.fitBounds([[myPos.lat, myPos.lng], [custLat, custLng]], { padding: [50, 50] });
+      }
       mapInstanceRef.current = map;
     };
 
