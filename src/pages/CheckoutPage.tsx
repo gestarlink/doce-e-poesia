@@ -75,6 +75,16 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
+      // Try to get user's GPS location
+      let lat = null, lng = null;
+      try {
+        const pos = await new Promise<GeolocationPosition>((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
+        );
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch {}
+
       const { data: pedido, error: pedidoError } = await supabase
         .from("pedidos")
         .insert({
@@ -82,6 +92,8 @@ const CheckoutPage = () => {
           valor_total: total,
           endereco: form.endereco,
           status: "recebido" as const,
+          latitude: lat,
+          longitude: lng,
         })
         .select()
         .single();

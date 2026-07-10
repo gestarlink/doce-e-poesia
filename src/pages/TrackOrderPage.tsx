@@ -50,8 +50,9 @@ const DeliveryMap = ({ order }: { order: Order }) => {
       await import("leaflet/dist/leaflet.css");
       leafletRef.current = L;
       if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
-      const custLat = order.latitude || -23.5505;
-      const custLng = order.longitude || -46.6333;
+      if (!order.latitude || !order.longitude) return;
+      const custLat = Number(order.latitude);
+      const custLng = Number(order.longitude);
       const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false }).setView([custLat, custLng], 15);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -89,8 +90,9 @@ const DeliveryMap = ({ order }: { order: Order }) => {
       const L = leafletRef.current;
       const map = mapInstanceRef.current;
       if (!L || !map) return;
-      const custLat = order.latitude || -23.5505;
-      const custLng = order.longitude || -46.6333;
+      if (!order.latitude || !order.longitude) return;
+      const custLat = Number(order.latitude);
+      const custLng = Number(order.longitude);
       if (deliveryMarkerRef.current) {
         deliveryMarkerRef.current.setLatLng([lat, lng]);
       } else {

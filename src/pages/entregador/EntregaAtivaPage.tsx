@@ -83,23 +83,14 @@ const EntregaAtivaPage = () => {
           sendLocation(newPos.lat, newPos.lng);
         },
         () => {
-          // Fallback: simulate near customer
-          const fallback = {
-            lat: (order.latitude || -23.5505) + 0.005,
-            lng: (order.longitude || -46.6333) - 0.003,
-          };
-          setMyPos(fallback);
-          sendLocation(fallback.lat, fallback.lng);
+          // GPS unavailable — don't save fake location to DB, just show the map
+          // using the customer position as reference
+          if (order.latitude && order.longitude) {
+            setMyPos({ lat: Number(order.latitude), lng: Number(order.longitude) });
+          }
         },
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
       );
-    } else {
-      const fallback = {
-        lat: (order.latitude || -23.5505) + 0.005,
-        lng: (order.longitude || -46.6333) - 0.003,
-      };
-      setMyPos(fallback);
-      sendLocation(fallback.lat, fallback.lng);
     }
 
     return () => {
@@ -124,8 +115,10 @@ const EntregaAtivaPage = () => {
         mapInstanceRef.current = null;
       }
 
-      const custLat = order.latitude || -23.5505;
-      const custLng = order.longitude || -46.6333;
+      if (!order.latitude || !order.longitude) return;
+
+      const custLat = Number(order.latitude);
+      const custLng = Number(order.longitude);
 
       const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false })
         .setView([myPos.lat, myPos.lng], 15);
@@ -206,13 +199,11 @@ const EntregaAtivaPage = () => {
     const L = leafletRef.current;
     myMarkerRef.current.setLatLng([myPos.lat, myPos.lng]);
     
-    if (routingRef.current && order) {
-      const custLat = order.latitude || -23.5505;
-      const custLng = order.longitude || -46.6333;
+    if (routingRef.current && order && order.latitude && order.longitude) {
       try {
         routingRef.current.setWaypoints([
           L.latLng(myPos.lat, myPos.lng),
-          L.latLng(custLat, custLng),
+          L.latLng(Number(order.latitude), Number(order.longitude)),
         ]);
       } catch {}
     }
@@ -249,16 +240,20 @@ const EntregaAtivaPage = () => {
 
   const openGoogleMaps = () => {
     if (!order) return;
-    const lat = order.latitude || -23.5505;
-    const lng = order.longitude || -46.6333;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, "_blank");
+    if (order.latitude && order.longitude) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}&travelmode=driving`, "_blank");
+    } else {
+      window.open(`https://www.google.com/maps/search/${encodeURIComponent(order.endereco)}`, "_blank");
+    }
   };
 
   const openWaze = () => {
     if (!order) return;
-    const lat = order.latitude || -23.5505;
-    const lng = order.longitude || -46.6333;
-    window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, "_blank");
+    if (order.latitude && order.longitude) {
+      window.open(`https://waze.com/ul?ll=${order.latitude},${order.longitude}&navigate=yes`, "_blank");
+    } else {
+      window.open(`https://waze.com/ul?q=${encodeURIComponent(order.endereco)}&navigate=yes`, "_blank");
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
