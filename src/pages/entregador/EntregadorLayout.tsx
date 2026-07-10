@@ -1,7 +1,8 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Package, MapPin, User, ArrowLeft, LogOut } from "lucide-react";
+import { Package, MapPin, User, ArrowLeft, LogOut, Crosshair, AlertTriangle, XCircle } from "lucide-react";
 import { useEntregadorOnline } from "@/hooks/useEntregadorOnline";
+import { useEntregadorLocation } from "@/hooks/useEntregadorLocation";
 
 const navItems = [
   { path: "/entregador", icon: Package, label: "Entregas" },
@@ -14,6 +15,39 @@ const EntregadorLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   useEntregadorOnline();
+  const locStatus = useEntregadorLocation();
+
+  const locationBanner = () => {
+    if (locStatus.status === "sharing") {
+      return (
+        <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-1.5 flex items-center gap-2 text-xs text-emerald-700">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          <Crosshair className="w-3.5 h-3.5" />
+          Compartilhando localização
+        </div>
+      );
+    }
+    if (locStatus.status === "denied") {
+      return (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-2 text-xs text-amber-700">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Localização bloqueada — permita o acesso nas configurações do navegador
+        </div>
+      );
+    }
+    if (locStatus.status === "unsupported") {
+      return (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-2 text-xs text-amber-700">
+          <XCircle className="w-3.5 h-3.5" />
+          GPS não disponível neste dispositivo
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   if ((profile?.tipo as string) !== "entregador" && !isDevEntregador) return <Navigate to="/" replace />;
@@ -36,6 +70,8 @@ const EntregadorLayout = () => {
           </div>
         </div>
       </header>
+
+      {locationBanner()}
 
       <main className="pb-20">
         <Outlet />
