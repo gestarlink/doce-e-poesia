@@ -6,6 +6,7 @@ import CartSheet from "@/components/CartSheet";
 import PromoBanner from "@/components/PromoBanner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import logoDocePoesia from "@/assets/logo-doce-poesia.png";
 import { Search, Star, ChevronDown, LogOut, User, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -77,8 +78,8 @@ const MenuPage = () => {
       <div className="ifood-header flex items-center">
         <div className="container flex items-center justify-between h-full">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm">
-              🍪
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm overflow-hidden">
+              <img src={logoDocePoesia} alt="Doce & Poesia" className="w-6 h-6 object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-sm leading-tight">Doce & Poesia</h1>
@@ -91,27 +92,36 @@ const MenuPage = () => {
             </div>
           </div>
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="text-xs text-muted-foreground bg-muted rounded-full px-3 py-1 hover:bg-muted/80 cursor-pointer">
-                  {profile?.nome?.split(" ")[0] || "Conta"}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[140px]">
-                {isAdmin && (
-                  <DropdownMenuItem onClick={() => window.location.href = "/admin"}>
-                    <Shield className="w-4 h-4 mr-2" /> Painel Admin
+            <div className="flex items-center gap-2">
+              <span className="relative flex w-2.5 h-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" />
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="text-xs text-muted-foreground bg-muted rounded-full px-3 py-1 hover:bg-muted/80 cursor-pointer">
+                    {profile?.nome?.split(" ")[0] || "Conta"}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[140px]">
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => window.location.href = "/admin"}>
+                      <Shield className="w-4 h-4 mr-2" /> Painel Admin
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => window.location.href = "/minha-conta"}>
+                    <User className="w-4 h-4 mr-2" /> Meus pedidos
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => window.location.href = "/minha-conta"}>
-                  <User className="w-4 h-4 mr-2" /> Meus pedidos
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" /> Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" /> Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <button onClick={() => signOut()} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors" title="Sair">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <a href="/auth" className="text-xs font-semibold text-primary">Entrar</a>
           )}
