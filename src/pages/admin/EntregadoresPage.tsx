@@ -33,16 +33,20 @@ const EntregadoresPage = () => {
   const detailMarkerRef = useRef<any>(null);
 
   const updateDriverLocation = useCallback((userId: string, lat: number, lng: number) => {
-    setEntregadores(prev => prev.map(d =>
-      d.user_id === userId
-        ? { ...d, lat, lng, lastSeen: new Date().toISOString() }
-        : d
-    ));
-    // Also update detail map marker if this driver is selected
-    if (selectedDriver?.user_id === userId && detailMarkerRef.current) {
+    setEntregadores(prev => prev.map(d => {
+      if (d.user_id === userId) {
+        return { ...d, lat, lng, lastSeen: new Date().toISOString() };
+      }
+      return d;
+    }));
+    setSelectedDriver(prev => prev?.user_id === userId
+      ? { ...prev, lat, lng, lastSeen: new Date().toISOString() }
+      : prev
+    );
+    if (detailMarkerRef.current) {
       detailMarkerRef.current.setLatLng([lat, lng]);
     }
-  }, [selectedDriver?.user_id]);
+  }, []);
 
   const fetchEntregadores = async () => {
     const { data: allProfiles } = await supabase
@@ -216,7 +220,7 @@ const EntregadoresPage = () => {
 
     loadDetailMap();
     return () => { if (detailMapInstanceRef.current) { detailMapInstanceRef.current.remove(); detailMapInstanceRef.current = null; } };
-  }, [selectedDriver?.user_id]);
+  }, [selectedDriver?.user_id, selectedDriver?.lat, selectedDriver?.lng]);
 
   if (loading) return <div className="container py-6"><div className="animate-pulse space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-muted rounded-xl" />)}</div></div>;
 
@@ -299,8 +303,8 @@ const EntregadoresPage = () => {
 
       {selectedDriver && (!selectedDriver.lat || !selectedDriver.lng) && (
         <div className="bg-card rounded-xl border p-4 text-center text-sm text-muted-foreground">
-          <p>📍 Localização não disponível para {selectedDriver.nome}</p>
-          <p className="text-xs mt-1">O entregador ainda não compartilhou sua localização</p>
+          <p>📍 Aguardando localização de {selectedDriver.nome}</p>
+          <p className="text-xs mt-1">A localização aparece automaticamente quando o entregador ativar o GPS</p>
           <Button variant="outline" size="sm" className="mt-2" onClick={() => setSelectedDriver(null)}>Fechar</Button>
         </div>
       )}
