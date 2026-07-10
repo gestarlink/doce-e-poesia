@@ -46,7 +46,7 @@ const EntregasListPage = () => {
         osc.type = "sine";
         osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
         gain.gain.setValueAtTime(0, ctx.currentTime + start);
-        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + start + 0.02);
+        gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + start + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
         osc.connect(gain);
         gain.connect(ctx.destination);

@@ -14,7 +14,7 @@ export function playNotificationSound() {
       osc.frequency.setValueAtTime(freq, startTime);
 
       gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+      gain.gain.linearRampToValueAtTime(0.8, startTime + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
       osc.connect(gain);

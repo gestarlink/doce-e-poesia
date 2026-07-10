@@ -34,7 +34,7 @@ function playOrderAlert(): () => void {
         osc.type = "sine";
         osc.frequency.setValueAtTime(freq, now + start);
         gain.gain.setValueAtTime(0, now + start);
-        gain.gain.linearRampToValueAtTime(0.4, now + start + 0.02);
+        gain.gain.linearRampToValueAtTime(0.8, now + start + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
         osc.connect(gain);
         gain.connect(ctx!.destination);
