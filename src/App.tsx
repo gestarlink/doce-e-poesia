@@ -79,15 +79,17 @@ const AppRoutes = () => {
 
   return (
     <CartProvider>
-      <Routes>
-        <Route path="/" element={<MenuPage />} />
-        <Route path="/install" element={<InstallPage />} />
-        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-        <Route path="/checkout" element={user ? <CheckoutPage /> : <Navigate to="/auth?redirect=/checkout" replace />} />
-        <Route path="/pedido/:id" element={user ? <TrackOrderPage /> : <Navigate to="/auth" replace />} />
-        <Route path="/minha-conta" element={user ? <MinhaConta /> : <Navigate to="/auth" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <div className="max-w-lg mx-auto shadow-xl md:border-x md:border-border relative min-h-dvh">
+        <Routes>
+          <Route path="/" element={<MenuPage />} />
+          <Route path="/install" element={<InstallPage />} />
+          <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+          <Route path="/checkout" element={user ? <CheckoutPage /> : <Navigate to="/auth?redirect=/checkout" replace />} />
+          <Route path="/pedido/:id" element={user ? <TrackOrderPage /> : <Navigate to="/auth" replace />} />
+          <Route path="/minha-conta" element={user ? <MinhaConta /> : <Navigate to="/auth" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </CartProvider>
   );
 };
@@ -104,7 +106,7 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <BrowserRouter>
           <AuthProvider>
-            <div className="max-w-lg mx-auto min-h-dvh bg-background shadow-xl md:border-x md:border-border relative">
+            <div className="min-h-dvh bg-background">
               <AppRoutes />
             </div>
           </AuthProvider>
