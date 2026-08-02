@@ -23,17 +23,12 @@ import FinanceiroPage from "./pages/admin/FinanceiroPage";
 import AtendimentoPage from "./pages/admin/AtendimentoPage";
 import PagamentoPage from "./pages/admin/PagamentoPage";
 import BannersPage from "./pages/admin/BannersPage";
-import EntregadoresPage from "./pages/admin/EntregadoresPage";
-import EntregadorLayout from "./pages/entregador/EntregadorLayout";
-import EntregasListPage from "./pages/entregador/EntregasListPage";
-import EntregaAtivaPage from "./pages/entregador/EntregaAtivaPage";
-import EntregadorPerfilPage from "./pages/entregador/EntregadorPerfilPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { user, profile, loading, isAdmin, isEntregador } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
   useOrderNotifications();
 
   if (loading) {
@@ -57,22 +52,8 @@ const AppRoutes = () => {
           <Route path="banners" element={<BannersPage />} />
           <Route path="pagamento" element={<PagamentoPage />} />
           <Route path="atendimento" element={<AtendimentoPage />} />
-          <Route path="entregadores" element={<EntregadoresPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    );
-  }
-
-  if (user && isEntregador) {
-    return (
-      <Routes>
-        <Route path="/entregador" element={<EntregadorLayout />}>
-          <Route index element={<EntregasListPage />} />
-          <Route path="ativa" element={<EntregaAtivaPage />} />
-          <Route path="perfil" element={<EntregadorPerfilPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/entregador" replace />} />
       </Routes>
     );
   }

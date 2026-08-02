@@ -1,7 +1,8 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Users, DollarSign, ArrowLeft, MessageCircle, CreditCard, LogOut, Image, Truck } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Users, DollarSign, ArrowLeft, MessageCircle, CreditCard, LogOut, Image } from "lucide-react";
 import { useAdminOrderAlert } from "@/hooks/useAdminOrderAlert";
+import logoDocePoesia from "@/assets/logo-doce-poesia.png";
 
 const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "Visão Geral" },
@@ -11,7 +12,6 @@ const navItems = [
   { path: "/admin/clientes", icon: Users, label: "Clientes" },
   { path: "/admin/financeiro", icon: DollarSign, label: "Financeiro" },
   { path: "/admin/pagamento", icon: CreditCard, label: "Pagamento" },
-  { path: "/admin/entregadores", icon: Truck, label: "Entregadores" },
   { path: "/admin/atendimento", icon: MessageCircle, label: "Atendimento" },
 ];
 
@@ -31,6 +31,9 @@ const AdminLayout = () => {
           <button onClick={() => navigate("/")} className="p-2 -ml-2 rounded-lg hover:bg-muted active:scale-95">
             <ArrowLeft className="w-5 h-5" />
           </button>
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+            <img src={logoDocePoesia} alt="Doce & Poesia" className="w-5 h-5 object-contain" />
+          </div>
           <h1 className="font-display font-bold text-lg">Doce & Poesia - Admin</h1>
           {isDevAdmin && (
             <span className="ml-2 text-[11px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-semibold border border-amber-300">
