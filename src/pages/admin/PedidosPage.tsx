@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Package, Truck, UserCheck, MapPin, Phone, CheckCircle2 } from "lucide-react";
+import { stopOrderAlert } from "@/lib/orderAlertSound";
 
 const STATUS_FLOW = ["recebido", "em_preparo", "saiu_entrega", "entregue"] as const;
 const STATUS_LABELS: Record<string, string> = {
@@ -73,12 +74,14 @@ const PedidosPage = () => {
   }, []);
 
   const prepararPedido = async (pedidoId: string) => {
+    stopOrderAlert();
     const { error } = await supabase.from("pedidos").update({ status: "em_preparo" }).eq("id", pedidoId);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Pedido em preparo!");
   };
 
   const despacharPedido = async (pedidoId: string) => {
+    stopOrderAlert();
     const { error } = await supabase.from("pedidos").update({ status: "saiu_entrega" }).eq("id", pedidoId);
     if (error) { toast.error("Erro ao despachar"); return; }
     toast.success("Pedido despachado! 🛵");
@@ -87,12 +90,14 @@ const PedidosPage = () => {
   };
 
   const confirmarEntrega = async (pedidoId: string) => {
+    stopOrderAlert();
     const { error } = await supabase.from("pedidos").update({ status: "entregue" }).eq("id", pedidoId);
     if (error) { toast.error("Erro ao confirmar"); return; }
     toast.success("Pedido entregue! 🎉");
   };
 
   const openDispatch = (pedidoId: string) => {
+    stopOrderAlert();
     setDespacharId(pedidoId);
     setDispatchOpen(true);
   };
