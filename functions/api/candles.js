@@ -1,12 +1,21 @@
 const ASSETS=new Set(["EURJPY","EURJPY-OTC","EURUSD","EURUSD-OTC"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
 const validCandle=c=>c&&typeof c==="object"&&[c.t,c.o,c.h,c.l,c.cl].every(Number.isFinite)&&Number.isInteger(c.t)&&c.t%60===0&&c.t>1000000000&&c.t<4102444800&&c.h>=Math.max(c.o,c.cl)&&c.l<=Math.min(c.o,c.cl)&&c.h>=c.l;
-const ALLOWED_ORIGIN="https://doceepoesia.pages.dev";
+async function ensureSchema(db){
+  const found=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='market_candles'").first();
+  if(found)return;
+  await db.batch([
+    db.prepare("CREATE TABLE IF NOT EXISTS market_candles (asset TEXT NOT NULL,t INTEGER NOT NULL,o REAL NOT NULL,h REAL NOT NULL,l REAL NOT NULL,cl REAL NOT NULL,received_at INTEGER NOT NULL,PRIMARY KEY(asset,t))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS market_feed_state (asset TEXT PRIMARY KEY NOT NULL,last_timestamp INTEGER NOT NULL,received_at INTEGER NOT NULL)")
+  ]);
+}
+
 export async function onRequestGet({request,env}){
   const asset=new URL(request.url).searchParams.get("asset");
   if(!ASSETS.has(asset))return json({status:"invalid_asset",error:"Ativo inválido"},400);
   if(env.MARKET_DB){
     try{
+      await ensureSchema(env.MARKET_DB);
       const result=await env.MARKET_DB.prepare("SELECT t,o,h,l,cl FROM market_candles WHERE asset=? ORDER BY t DESC LIMIT 750").bind(asset).all();
       const rows=result.results||[];
       if(!rows.length)return json({status:"no_data",asset,candles:[],storage:"D1",message:"Nenhum feed conectado"});
@@ -32,6 +41,7 @@ export async function onRequestPost({request,env}){
   const latest=rows.at(-1).t,asset=data.asset;
   if(env.MARKET_DB){
     try{
+      await ensureSchema(env.MARKET_DB);
       const existing=await env.MARKET_DB.prepare("SELECT last_timestamp FROM market_feed_state WHERE asset=?").bind(asset).first();
       const added=rows.filter(c=>c.t>(existing?.last_timestamp||0));
       if(!added.length)return json({ok:true,asset,stored:0,last_timestamp:existing?.last_timestamp,storage:"D1",duplicate:true});
