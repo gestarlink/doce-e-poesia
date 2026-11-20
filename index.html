@@ -109,7 +109,14 @@ $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData(
       if(s.status==='not_configured'){badge.textContent='Coletor externo: aguardando publicação';return}
       if(s.status==='binding_required'){badge.textContent='Coletor Cloudflare: vinculação interna pendente';return}
       if(s.status!=='connected'){badge.textContent='Coletor Cloudflare: indisponível';return}
-      if(s.source==='cloudflare_native_prototype'){badge.textContent='Cloudflare DO online · protocolo IQ pendente';badge.title='Serviço Cloudflare ativo. Ainda não conecta a IQ Option nem recebe preços.';return}
+      if(s.source==='cloudflare_native_prototype'){
+        if(s.stage==='demo_history_testing'){
+          badge.textContent=!s.demo_account_confirmed?'Conector IQ: conta DEMO não autorizada':
+            !s.credentials_ready?'Conector IQ: credenciais DEMO pendentes':'Conector IQ: pronto para teste histórico';
+          badge.title='Protocolo não oficial em testes; não há feed contínuo, previsão ou execução de ordens.';
+        }else{badge.textContent='Cloudflare DO online · protocolo IQ pendente'}
+        return;
+      }
       if(!s.demo_account_confirmed||!s.configured){badge.textContent='Coletor: sem conta DEMO autorizada';return}
       const age=Number.isFinite(s.last_sent_at_utc)?Math.floor(Date.now()/1000)-s.last_sent_at_utc:null;
       badge.textContent=age!==null&&age<180?'Coletor: transmitindo (não validado)':'Coletor: conectado, sem velas recentes';
