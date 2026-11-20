@@ -34,9 +34,9 @@ function draw(a,m){const can=$('chart'),dpr=window.devicePixelRatio||1;let width
 let right=Math.max(0,a.length-offset),left=Math.max(0,right-80),vis=a.slice(left,right);if(!vis.length)return;let hi=Math.max(...vis.map(x=>x.h)),lo=Math.min(...vis.map(x=>x.l)),margin=(hi-lo)*.12||.001;hi+=margin;lo-=margin;const y=p=>15+(hi-p)/(hi-lo)*(height-32),x=i=>15+i*(width-50)/vis.length,bar=Math.max(2,(width-50)/vis.length*.64);ctx.strokeStyle='#23374e';ctx.lineWidth=1;for(let i=0;i<5;i++){let yy=15+i*(height-32)/4;ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(width,yy);ctx.stroke();ctx.fillStyle='#8ca2ba';ctx.font='10px sans-serif';ctx.fillText((hi-i*(hi-lo)/4).toFixed(5),width-72,yy-4)}
 vis.forEach((b,i)=>{let col=b.c>=b.o?'#3bcaa0':'#f17183';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x(i)+bar/2,y(b.h));ctx.lineTo(x(i)+bar/2,y(b.l));ctx.stroke();ctx.fillRect(x(i),Math.min(y(b.o),y(b.c)),bar,Math.max(1,Math.abs(y(b.o)-y(b.c))))});
 function line(key,color){if(!m)return;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();vis.forEach((b,i)=>{const val=m[key][left+i];if(i===0)ctx.moveTo(x(i)+bar/2,y(val));else ctx.lineTo(x(i)+bar/2,y(val))});ctx.stroke()}line('e9','#38a8ee');line('e21','#f4c945')}
-function render(){const key=$('asset').value,raw=database[key],a=raw?aggregate(raw.candles,Number($('tf').value)):[],m=metrics(a);draw(a,m);const badge=$('sourceBadge');setLabel('sourceBadge',raw?(raw.type==='demo'?'DEMO FICTÍCIO':'CSV IMPORTADO'):'SEM DADOS');badge.style.borderColor=raw?.type==='demo'?'#a97739':'#58708c';setLabel('last',a.length?new Date(a[a.length-1].t*1000).toLocaleString('pt-BR'):'Aguardando dados OHLC');setLabel('trend',m?.trend||'—');setLabel('rsi',m?.rsi?.toFixed(1)||'—');setLabel('atr',m?.atr?.toFixed(5)||'—');setLabel('distance',m?(Math.abs(m.spread)).toFixed(5):'—');
+function render(){const key=$('asset').value,raw=database[key],a=raw?aggregate(raw.candles,Number($('tf').value)):[],m=metrics(a);draw(a,m);const badge=$('sourceBadge');setLabel('sourceBadge',raw?(raw.type==='demo'?'DEMO FICTÍCIO':raw.type==='iq-demo-history'?'IQ DEMO · HISTÓRICO NÃO VALIDADO':raw.type==='live'?'FEED NÃO VALIDADO':'CSV IMPORTADO'):'SEM DADOS');badge.style.borderColor=raw?.type==='demo'?'#a97739':'#58708c';setLabel('last',a.length?new Date(a[a.length-1].t*1000).toLocaleString('pt-BR'):'Aguardando dados OHLC');setLabel('trend',m?.trend||'—');setLabel('rsi',m?.rsi?.toFixed(1)||'—');setLabel('atr',m?.atr?.toFixed(5)||'—');setLabel('distance',m?(Math.abs(m.spread)).toFixed(5):'—');
 if(!m){setLabel('signal','Aguardando pelo menos 30 velas fechadas para avaliação.');setLabel('decision','AGUARDAR DADOS')}else{const b=a[a.length-1],c=a[a.length-2];const contrary=m.trend==='ALTA'&&b.c<b.o||m.trend==='BAIXA'&&b.c>b.o;const wick=Math.max(0,b.h-Math.max(b.o,b.c));setLabel('signal','Tendência '+m.trend.toLowerCase()+'. Distância EMA '+(m.widen?'expandindo':'não expandindo')+'. '+(contrary?'Última vela contrária à tendência. ':'')+'Pavio superior '+wick.toFixed(5)+'. A leitura não prevê a próxima vela.');setLabel('decision','OBSERVAÇÃO — SEM SINAL VALIDADO')}
-setLabel('feedInfo',raw?(raw.type==='demo'?'Dados simulados no navegador. Nenhuma cotação real foi recebida.':'Dados importados localmente por CSV; não há alimentação automática nem confirmação de equivalência com a IQ Option.'):'Não há conexão ativa com a IQ Option.');$('multi').innerHTML=raw?timeframes.map(n=>{const mm=metrics(aggregate(raw.candles,n));return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #27344b;padding:8px 0"><span>M'+n+'</span><strong>'+ (mm?.trend||'INSUFICIENTE')+'</strong></div>'}).join(''):'Aguardando velas M1';$('history').innerHTML=raw?'<div>Origem: '+(raw.type==='demo'?'demonstração':'arquivo CSV')+'</div><div>Velas M1 fechadas: '+raw.candles.length+'</div><div>Último preço: '+raw.candles.at(-1)?.c.toFixed(5)+'</div>':'Sem registros.'}
+setLabel('feedInfo',raw?(raw.type==='demo'?'Dados simulados no navegador. Nenhuma cotação real foi recebida.':raw.type==='iq-demo-history'?'Velas históricas recebidas de protocolo comunitário com conta DEMO; cotação/latência ainda não conferidas contra a IQ Option. Não é feed contínuo.':raw.type==='live'?'Feed externo não oficial; verifique correspondência e atraso.':'Dados importados localmente por CSV, sem atualização automática.'):'Não há conexão ativa com a IQ Option.');$('multi').innerHTML=raw?timeframes.map(n=>{const mm=metrics(aggregate(raw.candles,n));return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #27344b;padding:8px 0"><span>M'+n+'</span><strong>'+ (mm?.trend||'INSUFICIENTE')+'</strong></div>'}).join(''):'Aguardando velas M1';$('history').innerHTML=raw?'<div>Origem: '+(raw.type==='demo'?'demonstração':'arquivo CSV')+'</div><div>Velas M1 fechadas: '+raw.candles.length+'</div><div>Último preço: '+raw.candles.at(-1)?.c.toFixed(5)+'</div>':'Sem registros.'}
 $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData()};offset=0;render()};$('clear').onclick=()=>{delete database[$('asset').value];offset=0;render()};$('csv').onchange=async(e)=>{const f=e.target.files[0];if(!f)return;try{const candles=readCSV(await f.text());if(candles.length<30)throw Error('Menos de 30 velas M1 fechadas válidas.');database[$('asset').value]={type:'csv',candles};offset=0;render()}catch(err){alert('Erro de CSV: '+err.message)}e.target.value=''};$('asset').onchange=()=>{offset=0;render()};$('tf').onchange=()=>{offset=0;render()};$('older').onclick=()=>{offset+=30;render()};$('newer').onclick=()=>{offset=Math.max(0,offset-30);render()};window.onresize=render;render();
 </script><script>
 (function(){
@@ -117,5 +117,54 @@ $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData(
     }catch{badge.textContent='Coletor: status indisponível'}
   }
   check();setInterval(check,60000);
+})();
+</script><script>
+(function(){
+  const bar=document.querySelector('.toolbar');if(!bar)return;
+  const panel=document.createElement('section');panel.className='panel';
+  panel.innerHTML='<h2>Teste de velas reais — conta DEMO separada</h2><p class="muted">A conexão não oficial pode falhar ou exigir verificação no site da IQ Option. Primeiro configure três secrets no Worker. Nunca insira aqui sua senha da IQ Option; somente o token de controle criado no Cloudflare.</p><div class="toolbar"><input id="demoControlToken" type="password" autocomplete="off" spellcheck="false" placeholder="Token de controle do Worker" style="min-width:220px;flex:1;border:1px solid #34455f;border-radius:8px;background:#17283d;color:white;padding:10px"><button id="demoHistoryButton">Testar histórico M1 (somente leitura)</button></div><div id="demoHistoryMessage" class="muted" style="font-size:12px">Aguardando teste autorizado. Nenhuma credencial salva no navegador.</div>';
+  bar.insertAdjacentElement('afterend',panel);
+  const btn=panel.querySelector('#demoHistoryButton'),message=panel.querySelector('#demoHistoryMessage'),secret=panel.querySelector('#demoControlToken');
+  const labels={
+    token_required:'Digite seu token de controle (mínimo 32 caracteres).',
+    not_authorized:'Token de controle incorreto. Confira IQ_CONTROL_TOKEN no Worker.',
+    demo_account_not_confirmed:'Trava ativa: confirme conta exclusivamente DEMO no segredo IQ_ACCOUNT_KIND.',
+    demo_credentials_missing:'Worker sem IQ_DEMO_EMAIL ou IQ_DEMO_PASSWORD.',
+    login_network_error:'Cloudflare não conseguiu alcançar o login da IQ Option.',
+    login_challenge:'IQ Option exige verificação adicional; conclua apenas no site oficial.',
+    login_not_accepted:'Login não aceito pela IQ Option. Confira conta separada e validação.',
+    rate_limited:'Limite de tentativas da IQ Option. Aguarde.',
+    rate_limited_local:'Aguarde 60 segundos entre os testes.',
+    timeout:'Tempo de resposta esgotado. Protocolo pode ter mudado.',
+    socket_creation_failed:'WebSocket indisponível no ambiente.',
+    socket_send_failed:'Não foi possível enviar mensagem do WebSocket.',
+    session_rejected:'Sessão não aceita pela IQ Option.',
+    socket_error:'Conexão WebSocket falhou.',
+    socket_closed:'WebSocket fechado antes da resposta.',
+    invalid_candles:'Amostra OHLC insuficiente ou inválida.',
+    unexpected_error:'Não foi possível concluir o teste.',
+    collector_timeout_or_unavailable:'Worker indisponível ou excedeu o tempo de resposta.',
+    import_failed:'Velas recebidas, mas falha ao salvar no D1.'
+  };
+  btn.addEventListener('click',async()=>{
+    const key=secret.value.trim();const asset=$('asset').value;
+    if(key.length<32){message.textContent='Informe um token de controle de pelo menos 32 caracteres. Não use a senha da IQ Option.';return}
+    btn.disabled=true;message.textContent='Tentando autenticar conta DEMO e solicitar histórico M1. Aguarde até 30 segundos...';
+    let result={status:'unexpected_error'};
+    try{
+      const response=await fetch('/api/demo-history',{method:'POST',headers:{'Content-Type':'application/json','X-Control-Token':key},body:JSON.stringify({asset}),cache:'no-store'});
+      result=await response.json();
+      if(!response.ok)throw Error(result.status);
+      if(result.status!=='history_imported')throw Error(result.status);
+      const feed=await fetch('/api/candles?asset='+encodeURIComponent(asset),{cache:'no-store'}).then(r=>r.json());
+      if(!Array.isArray(feed.candles)||feed.candles.length<30)throw Error('insufficient_source_data');
+      const valid=validate(feed.candles.map(c=>({t:c.t,o:c.o,h:c.h,l:c.l,c:c.cl})));
+      database[asset]={type:'iq-demo-history',candles:valid};
+      offset=0;render();
+      message.textContent='Amostra histórica recebida: '+valid.length+' velas M1. Compare preços e horários com a IQ Option. Não é feed ao vivo.';
+    }catch(e){
+      message.textContent=labels[result.status]||labels[e.message]||'Teste não concluído: '+String(result.status||'erro desconhecido');
+    }finally{secret.value='';btn.disabled=false}
+  });
 })();
 </script></body></html>
