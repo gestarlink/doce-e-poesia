@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "negociatrader-iq-collector",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-19",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MARKET_AGENT",
+        "class_name": "MarketAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1_market_agent",
+      "new_sqlite_classes": [
+        "MarketAgent"
+      ]
+    }
+  ],
+  "vars": {
+    "DEMO_CONFIRMED": "false"
+  },
+  "observability": {
+    "enabled": false
+  }
+}
