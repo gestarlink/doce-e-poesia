@@ -30,3 +30,7 @@ Após criar o binding KV `MARKET_KV` e o segredo `FEED_INGEST_TOKEN` no ambiente
 ## Atualização: D1 (recomendado para M1)
 O Cloudflare KV gratuito possui limite de gravações e não é adequado para atualizar muitos ativos M1 continuamente. O backend agora prioriza D1 quando há binding `MARKET_DB` no ambiente Production. Basta criar um banco D1 e adicionar esse binding ao projeto Pages: as tabelas são inicializadas automaticamente na primeira consulta à API. `migrations/0001_market_data.sql` documenta o esquema caso prefira criá-lo manualmente.
 Acompanhe a configuração em `/api/status`, que **não** revela o valor do segredo. Sem `MARKET_DB`, o código mantém compatibilidade com `MARKET_KV`, mas pode atingir o limite diário no plano gratuito. Nenhuma cotação da IQ Option será recebida até que um coletor privado autentique uma conta de treinamento, faça a coleta e envie velas M1 fechadas.
+
+
+## Deploy do binding D1
+O projeto Cloudflare Pages usa o binding Production `MARKET_DB` para o banco `negociatrader-market` e mantém `MARKET_KV` de fallback. Quando um binding é criado, é necessário republicar a branch `master` para atualizar o ambiente de execução. Verifique `/api/status`: `d1_binding: true`. A primeira consulta a `/api/candles?asset=EURJPY-OTC` inicializa as tabelas se o banco estiver vazio.
