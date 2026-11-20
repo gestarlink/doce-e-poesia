@@ -102,6 +102,8 @@ export class MarketAgent {
       const asset=requestBody?.asset;
       if(typeof asset!=="string"||!Object.prototype.hasOwnProperty.call(ASSETS,asset))return sendJson({status:"unknown_asset"},400);
       const now=Date.now();
+      const cooldown=await this.state.storage.get("auth_cooldown_until_ms")||0;
+      if(now<cooldown)return sendJson({status:"rate_limited_local",retry_after_seconds:Math.ceil((cooldown-now)/1000)},429);
       const started=await this.state.storage.get("last_demo_attempt_ms")||0;
       if(now-started<60000)return sendJson({status:"rate_limited_local",retry_after_seconds:Math.ceil((60000-(now-started))/1000)},429);
       await this.state.storage.put("last_demo_attempt_ms",now);
@@ -109,6 +111,7 @@ export class MarketAgent {
       let result;
       try{result=await requestDemoHistory(asset,this.env)}
       catch{result={status:"unexpected_error"}}
+      if(result.status==="rate_limited")await this.state.storage.put("auth_cooldown_until_ms",Date.now()+15*60*1000);
       const summary={status:result.status,asset,count:Array.isArray(result.candles)?result.candles.length:0,finished_at_ms:Date.now()};
       await this.state.storage.put("latest_demo_test",summary);
       return sendJson(result,result.status==="history_received"?200:422);
