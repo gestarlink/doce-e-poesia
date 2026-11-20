@@ -74,4 +74,23 @@ $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData(
   feedButton.addEventListener('click',()=>{if(active){stop();return}active=true;feedButton.textContent='Desconectar feed';feedStatus.textContent='Verificando fonte...';poll();timer=setInterval(poll,10000)});
   document.getElementById('asset').addEventListener('change',()=>{lastKey='';if(active)poll()});
 })();
+</script><script>
+(function(){
+ const bar=document.querySelector('.toolbar');
+ if(!bar)return;
+ const label=document.createElement('span');
+ label.className='badge';label.id='infraStatus';label.textContent='Verificando infraestrutura...';
+ bar.appendChild(label);
+ async function update(){
+  try{
+   const response=await fetch('/api/status',{cache:'no-store'});
+   if(!response.ok)throw new Error('status');
+   const info=await response.json();
+   const database=info.d1_binding?(info.d1_schema==='ready'?'D1 ativo':'D1 aguardando inicialização'):info.kv_binding?'KV ativo · D1 pendente':'Armazenamento pendente';
+   label.textContent='Cloudflare: '+database;
+   label.title='Fonte de preços: '+(info.market_data||'não validada')+'. Os indicadores não são sinais de operação.';
+  }catch{label.textContent='Não foi possível consultar o servidor'}
+ }
+ update();setInterval(update,60000);
+})();
 </script></body></html>
