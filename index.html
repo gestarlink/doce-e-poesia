@@ -38,4 +38,40 @@ function render(){const key=$('asset').value,raw=database[key],a=raw?aggregate(r
 if(!m){setLabel('signal','Aguardando pelo menos 30 velas fechadas para avaliação.');setLabel('decision','AGUARDAR DADOS')}else{const b=a[a.length-1],c=a[a.length-2];const contrary=m.trend==='ALTA'&&b.c<b.o||m.trend==='BAIXA'&&b.c>b.o;const wick=Math.max(0,b.h-Math.max(b.o,b.c));setLabel('signal','Tendência '+m.trend.toLowerCase()+'. Distância EMA '+(m.widen?'expandindo':'não expandindo')+'. '+(contrary?'Última vela contrária à tendência. ':'')+'Pavio superior '+wick.toFixed(5)+'. A leitura não prevê a próxima vela.');setLabel('decision','OBSERVAÇÃO — SEM SINAL VALIDADO')}
 setLabel('feedInfo',raw?(raw.type==='demo'?'Dados simulados no navegador. Nenhuma cotação real foi recebida.':'Dados importados localmente por CSV; não há alimentação automática nem confirmação de equivalência com a IQ Option.'):'Não há conexão ativa com a IQ Option.');$('multi').innerHTML=raw?timeframes.map(n=>{const mm=metrics(aggregate(raw.candles,n));return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #27344b;padding:8px 0"><span>M'+n+'</span><strong>'+ (mm?.trend||'INSUFICIENTE')+'</strong></div>'}).join(''):'Aguardando velas M1';$('history').innerHTML=raw?'<div>Origem: '+(raw.type==='demo'?'demonstração':'arquivo CSV')+'</div><div>Velas M1 fechadas: '+raw.candles.length+'</div><div>Último preço: '+raw.candles.at(-1)?.c.toFixed(5)+'</div>':'Sem registros.'}
 $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData()};offset=0;render()};$('clear').onclick=()=>{delete database[$('asset').value];offset=0;render()};$('csv').onchange=async(e)=>{const f=e.target.files[0];if(!f)return;try{const candles=readCSV(await f.text());if(candles.length<30)throw Error('Menos de 30 velas M1 fechadas válidas.');database[$('asset').value]={type:'csv',candles};offset=0;render()}catch(err){alert('Erro de CSV: '+err.message)}e.target.value=''};$('asset').onchange=()=>{offset=0;render()};$('tf').onchange=()=>{offset=0;render()};$('older').onclick=()=>{offset+=30;render()};$('newer').onclick=()=>{offset=Math.max(0,offset-30);render()};window.onresize=render;render();
+</script><script>
+(function(){
+  const toolbar=document.querySelector('.toolbar');
+  const feedButton=document.createElement('button');feedButton.id='feedToggle';feedButton.textContent='Conectar feed (beta)';
+  const feedStatus=document.createElement('span');feedStatus.id='feedStatus';feedStatus.className='badge';feedStatus.textContent='Feed desligado';
+  toolbar.append(feedButton,feedStatus);
+  let active=false,requesting=false,timer=null,lastKey='';
+  function stop(){active=false;clearInterval(timer);timer=null;feedButton.textContent='Conectar feed (beta)';feedStatus.textContent='Feed desligado'}
+  async function poll(){
+    if(!active||requesting)return;
+    requesting=true;
+    try{
+      const asset=document.getElementById('asset').value;
+      const res=await fetch('/api/candles?asset='+encodeURIComponent(asset),{cache:'no-store'});
+      const payload=await res.json();
+      if(!res.ok||payload.status!=='available'){feedStatus.textContent=payload.status==='not_configured'?'Cloudflare KV pendente':'Sem velas disponíveis';return}
+      const now=Math.floor(Date.now()/1000);
+      const received=Number(payload.received_at||0);
+      const last=Number(payload.last_timestamp||0);
+      if(!Array.isArray(payload.candles)||!payload.candles.length||!last)throw Error('invalid');
+      if(now-received>180||now-last>240){feedStatus.textContent='Feed atrasado — não usar para decisões';return}
+      const result=validate(payload.candles.map(v=>({t:v.t,o:v.o,h:v.h,l:v.l,c:v.cl})));
+      if(result.length<30){feedStatus.textContent='Dados insuficientes';return}
+      const unique=asset+':'+last+':'+result.length;
+      if(unique!==lastKey){database[asset]={type:'live',candles:result};lastKey=unique;offset=0;render()}
+      const badge=document.getElementById('sourceBadge');
+      badge.textContent='FEED EXTERNO · NÃO VALIDADO';
+      badge.style.borderColor='#b58c44';
+      document.getElementById('feedInfo').textContent='Fonte: biblioteca comunitária não oficial. Última vela M1 fechada: '+new Date(last*1000).toLocaleString('pt-BR')+'. Verifique cotação e latência na IQ Option antes de usar estes dados. Sem execução de ordens.';
+      feedStatus.textContent='Recebendo velas · fonte não validada';
+    }catch(e){feedStatus.textContent='Feed indisponível / erro de conexão'}
+    finally{requesting=false}
+  }
+  feedButton.addEventListener('click',()=>{if(active){stop();return}active=true;feedButton.textContent='Desconectar feed';feedStatus.textContent='Verificando fonte...';poll();timer=setInterval(poll,10000)});
+  document.getElementById('asset').addEventListener('change',()=>{lastKey='';if(active)poll()});
+})();
 </script></body></html>
