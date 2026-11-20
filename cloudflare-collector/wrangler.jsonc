@@ -19,9 +19,6 @@
       ]
     }
   ],
-  "vars": {
-    "DEMO_CONFIRMED": "false"
-  },
   "observability": {
     "enabled": false
   }
