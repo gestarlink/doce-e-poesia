@@ -1,0 +1,5 @@
+# Experimental and unaudited external connector; do NOT use with a real-money account.
+requests>=2.31,<3
+# Community project; the maintainer explicitly warns against real account use.
+# This URL is fetched by Render at build time, not by browser users.
+https://github.com/iqoptionapi/iqoptionapi/archive/refs/tags/7.1.1.zip
