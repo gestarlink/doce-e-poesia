@@ -14,9 +14,3 @@ services:
         value: EURJPY-OTC
       - key: FEED_API_URL
         value: https://doceepoesia.pages.dev
-      - key: IQ_EMAIL
-        sync: false
-      - key: IQ_PASSWORD
-        sync: false
-      - key: FEED_INGEST_TOKEN
-        sync: false
