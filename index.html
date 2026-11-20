@@ -168,7 +168,7 @@ $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData(
   btn.addEventListener('click',async()=>{
     const key=secret.value.trim();const asset=$('asset').value;
     if(key.length<32){message.textContent='Informe um token de controle de pelo menos 32 caracteres. Não use a senha da IQ Option.';return}
-    btn.disabled=true;message.textContent='Tentando autenticar conta DEMO e solicitar histórico M1. Aguarde até 30 segundos...';
+    btn.disabled=true;message.textContent='Tentando autenticar conta DEMO e solicitar histórico M1. Aguarde até 45 segundos...';
     let result={status:'unexpected_error'};
     try{
       const response=await fetch('/api/demo-history',{method:'POST',headers:{'Content-Type':'application/json','X-Control-Token':key},body:JSON.stringify({asset}),cache:'no-store'});
