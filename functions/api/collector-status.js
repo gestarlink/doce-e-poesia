@@ -20,7 +20,14 @@ export async function onRequestGet({env}){
     }
     return json({status:"connected",source:"cloudflare_native_prototype",
       stage:String(p.adapter||"pending").slice(0,64),
-      iq_connected:p.iq_connected===true,live_prices:p.live_prices===true});
+      iq_connected:p.iq_connected===true,live_prices:p.live_prices===true,
+      demo_account_confirmed:p.account_gate===true,
+      credentials_ready:p.credentials_ready===true,
+      latest_demo_test:p.latest_demo_test&&typeof p.latest_demo_test.status==="string"
+        ?{status:p.latest_demo_test.status.slice(0,70),
+          asset:String(p.latest_demo_test.asset||"").slice(0,15),
+          count:Number(p.latest_demo_test.count)||0}
+        :null});
   }catch{
     return json({status:"worker_unreachable",message:"Service Binding configurado, mas chamada falhou"},502)
   }
