@@ -22,7 +22,11 @@ def convert(candles,now):
             continue
     return sorted(rows.values(),key=lambda x:x["t"])
 
-def main():
+def main(notify=None):
+    def emit(event, **fields):
+        if callable(notify):
+            try: notify(event, **fields)
+            except Exception: pass
     asset=os.environ.get("IQ_ASSET","EURJPY-OTC")
     url=os.environ.get("FEED_API_URL","").rstrip("/")
     token=os.environ.get("FEED_INGEST_TOKEN","")
@@ -32,10 +36,12 @@ def main():
         raise SystemExit("Configure IQ_EMAIL, IQ_PASSWORD, IQ_ASSET, FEED_API_URL (HTTPS) e FEED_INGEST_TOKEN em ambiente privado.")
     import requests
     from iqoptionapi.stable_api import IQ_Option
+    emit("authenticating")
     api=IQ_Option(email,password)
     ok,reason=api.connect()
     if not ok:
         raise SystemExit("Falha na autenticação da conta de TREINAMENTO. Tipo: "+type(reason).__name__)
+    emit("connected")
     print("Conexão experimental iniciada. Sem chamadas de compra e venda.",flush=True)
     last_sent=0
     failures=0
@@ -53,16 +59,19 @@ def main():
                 resp.raise_for_status()
                 latest=max(c["t"] for c in rows)
                 last_sent=latest
+                emit("sent", candle_timestamp=latest, count=len(rows))
                 print("Velas M1 fechadas transmitidas:",len(rows),"última:",time.strftime("%H:%M:%S UTC",time.gmtime(latest)),flush=True)
             failures=0
             time.sleep(12)
         except KeyboardInterrupt:
+            emit("stopped")
             print("Coletor encerrado.",flush=True)
             return
         except Exception as err:
             failures+=1
             # Sem stacktrace de terceiros (pode revelar dados sensíveis).
             wait=min(120,12*2**min(failures,3))
+            emit("error", error_type=type(err).__name__)
             print("Falha de coleta/transmissão:",type(err).__name__,"Aguardando",wait,"segundos.",flush=True)
             time.sleep(wait)
 
