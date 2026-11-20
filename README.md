@@ -34,3 +34,7 @@ Acompanhe a configuração em `/api/status`, que **não** revela o valor do segr
 
 ## Deploy do binding D1
 O projeto Cloudflare Pages usa o binding Production `MARKET_DB` para o banco `negociatrader-market` e mantém `MARKET_KV` de fallback. Quando um binding é criado, é necessário republicar a branch `master` para atualizar o ambiente de execução. Verifique `/api/status`: `d1_binding: true`. A primeira consulta a `/api/candles?asset=EURJPY-OTC` inicializa as tabelas se o banco estiver vazio.
+
+
+## Conexão Pages → Cloudflare Worker
+O Pages usa a variável de Production `COLLECTOR_PUBLIC_URL=https://negociatrader.gestarlink.workers.dev` para consultar o serviço via `/api/collector-status`. Após configurar a variável no painel Cloudflare, o novo deploy da branch `master` aplica a alteração. O Worker neste estágio apenas fornece diagnóstico, sem conexão com a IQ Option ou velas reais.
