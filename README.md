@@ -21,3 +21,7 @@ O endpoint espera JSON `{"asset":"EURJPY-OTC","candles":[{"t":1700000000,"o":1,"
 
 ## Segurança e limites
 Dados de fonte não oficial podem ter atraso, interrupção e divergências em relação à IQ Option. GET público expõe as velas armazenadas, sem informações de contas. Não existe endpoint para operar; nenhum modelo garante resultados. Não hospede automação autenticada usando Workers públicos.
+
+
+## Cloudflare Pages — atualização do ambiente
+Após criar o binding KV `MARKET_KV` e o segredo `FEED_INGEST_TOKEN` no ambiente Production, faça novo deploy da branch master. GET /api/candles?asset=EURJPY-OTC deve retornar status `no_data` quando o KV existe mas ainda não recebeu velas; `not_configured` indica binding ausente na implantação ativa.
