@@ -15,7 +15,7 @@ export async function onRequestPost({request,env}){
   let result;
   try{
     const ctl=new AbortController();
-    const timer=setTimeout(()=>ctl.abort(),29000);
+    const timer=setTimeout(()=>ctl.abort(),43000);
     let r;
     try{
       r=await env.COLLECTOR_SERVICE.fetch("https://collector.internal/demo-history",{
