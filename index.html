@@ -132,6 +132,18 @@ $('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData(
   panel.innerHTML='<h2>Teste de velas reais — conta DEMO separada</h2><p class="muted">A conexão não oficial pode falhar ou exigir verificação no site da IQ Option. Primeiro configure três secrets no Worker. Nunca insira aqui sua senha da IQ Option; somente o token de controle criado no Cloudflare.</p><div class="toolbar"><input id="demoControlToken" type="password" autocomplete="off" spellcheck="false" placeholder="Token de controle do Worker" style="min-width:220px;flex:1;border:1px solid #34455f;border-radius:8px;background:#17283d;color:white;padding:10px"><button id="demoHistoryButton">Testar histórico M1 (somente leitura)</button></div><div id="demoHistoryMessage" class="muted" style="font-size:12px">Aguardando teste autorizado. Nenhuma credencial salva no navegador.</div>';
   bar.insertAdjacentElement('afterend',panel);
   const btn=panel.querySelector('#demoHistoryButton'),message=panel.querySelector('#demoHistoryMessage'),secret=panel.querySelector('#demoControlToken');
+  const generate=document.createElement('button');
+  generate.type='button';generate.textContent='Gerar token seguro';
+  btn.parentElement.insertBefore(generate,btn);
+  generate.addEventListener('click',()=>{
+    const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+    const token=Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('');
+    secret.value=token;
+    message.textContent='Token de controle gerado neste navegador, ainda não salvo no Cloudflare. Copie-o para o Secret IQ_CONTROL_TOKEN do Worker e guarde-o em local seguro.';
+    if(navigator.clipboard?.writeText){navigator.clipboard.writeText(token).then(()=>{
+       message.textContent='Token gerado e copiado. Cole no Secret IQ_CONTROL_TOKEN do Worker e guarde-o em local seguro. Não envie aqui no chat.';
+    }).catch(()=>{message.textContent='Token gerado. Selecione o campo e copie manualmente para o Secret IQ_CONTROL_TOKEN.'})}
+  });
   const labels={
     token_required:'Digite seu token de controle (mínimo 32 caracteres).',
     not_authorized:'Token de controle incorreto. Confira IQ_CONTROL_TOKEN no Worker.',
