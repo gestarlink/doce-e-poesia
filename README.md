@@ -38,3 +38,7 @@ O projeto Cloudflare Pages usa o binding Production `MARKET_DB` para o banco `ne
 
 ## Conexão Pages → Cloudflare Worker
 O Pages usa a variável de Production `COLLECTOR_PUBLIC_URL=https://negociatrader.gestarlink.workers.dev` para consultar o serviço via `/api/collector-status`. Após configurar a variável no painel Cloudflare, o novo deploy da branch `master` aplica a alteração. O Worker neste estágio apenas fornece diagnóstico, sem conexão com a IQ Option ou velas reais.
+
+
+## Aplicação do Service Binding interno
+A variável de ambiente `COLLECTOR_PUBLIC_URL` é apenas informativa. Em Pages Production, o **Service Binding** `COLLECTOR_SERVICE` precisa apontar para o Worker `negociatrader`, entrypoint default. Após salvar, um novo deploy da branch master aplica a vinculação. Verifique `/api/collector-status`: antes da vinculação responde `binding_required`, depois responde `connected` com `source=cloudflare_native_prototype` e `live_prices=false`, pois ainda não há cotações reais.
