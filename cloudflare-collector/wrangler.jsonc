@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
-  "name": "negociatrader-iq-collector",
+  "name": "negociatrader",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-19",
   "durable_objects": {
@@ -21,5 +21,8 @@
   ],
   "observability": {
     "enabled": false
+  },
+  "vars": {
+    "IQ_ACCOUNT_KIND": "SEPARATE_DEMO_CONFIRMED"
   }
 }
