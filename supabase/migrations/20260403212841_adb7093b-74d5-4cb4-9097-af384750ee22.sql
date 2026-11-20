@@ -1,1 +1,0 @@
-ALTER TABLE public.banners ADD COLUMN IF NOT EXISTS link_url text DEFAULT '';

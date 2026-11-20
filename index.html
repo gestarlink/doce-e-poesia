@@ -1,28 +1,41 @@
 <!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Doce & Poesia" />
-    <meta name="theme-color" content="#4a5e3c" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <title>Doce & Poesia Delivery - Brownies Artesanais</title>
-    <meta name="description" content="Peça seus brownies artesanais favoritos com delivery rápido. Doce & Poesia - Chocolate que vira poesia.">
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Doce & Poesia Delivery" />
-    <meta property="og:description" content="Peça seus brownies artesanais favoritos com delivery rápido." />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Doce & Poesia Delivery" />
-    <meta name="twitter:description" content="Peça seus brownies artesanais favoritos com delivery rápido." />
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#0b1020"/><title>negocIAtrader | QG de Mercado</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#e9eef9;background:#080d19}*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}header{height:68px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;border-bottom:1px solid #202c42;background:#0c1424}h1{font-size:20px;margin:0}small,.muted{color:#9aaecb}button,select,.file{background:#18283d;border:1px solid #334661;color:#f1f7ff;border-radius:8px;padding:9px 12px;cursor:pointer}button:hover{background:#253951}button:disabled{opacity:.4;cursor:not-allowed}.badge{border:1px solid #58708c;color:#a9c3e3;border-radius:18px;padding:5px 10px;font-size:11px}.warning{color:#facc85}.ok{color:#84d8ae}main{padding:22px;max-width:1600px;margin:auto}.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:15px}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(295px,1fr);gap:16px}.panel{border:1px solid #24344d;background:#0e1829;border-radius:14px;padding:16px;margin-bottom:16px}h2{font-size:15px;margin:0 0 12px}h3{font-size:13px;margin:0 0 12px}.stat{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:12px 0}.tile{background:#142238;border-radius:8px;padding:12px}.tile strong{display:block;font-size:18px;margin-top:6px}.tile small{font-size:11px}#chart{width:100%;height:420px;display:block;background:#0a1423;border-radius:8px}.buttons{display:flex;gap:8px;flex-wrap:wrap}.log{max-height:200px;overflow:auto;font-size:12px;color:#b6c4d7}.log div{padding:9px 0;border-bottom:1px solid #27344b}.panel p{line-height:1.5;font-size:13px}.meter{height:8px;background:#27374a;border-radius:9px;overflow:hidden;margin:8px 0}.fill{height:100%;background:#52b7dd;width:0}.footer{font-size:12px;color:#91a6c0;padding:0 22px 24px;max-width:1600px;margin:auto}label.file input{display:none}a{color:#9bc8ff}@media(max-width:900px){.grid{display:block}header{padding:14px;height:auto}main{padding:12px}.stat{grid-template-columns:repeat(2,1fr)}#chart{height:320px}}
+</style></head><body>
+<header><div><h1>◈ negocIAtrader</h1><small>QG de análise de mercado · somente leitura</small></div><span id="sourceBadge" class="badge">SEM DADOS</span></header>
+<main><div class="toolbar">
+<select id="asset"><option value="EURJPY">EUR/JPY normal</option><option value="EURJPY-OTC">EUR/JPY OTC</option><option value="EURUSD">EUR/USD normal</option><option value="EURUSD-OTC">EUR/USD OTC</option></select>
+<select id="tf"><option value="1">M1</option><option value="5">M5</option><option value="10">M10</option><option value="15">M15</option><option value="60">H1</option></select>
+<label class="file">Importar velas CSV<input id="csv" type="file" accept=".csv,text/csv"/></label>
+<button id="demo">Iniciar demonstração</button><button id="clear">Limpar dados</button><button id="older">◀ Histórico</button><button id="newer">Mais recentes ▶</button>
+</div>
+<div class="grid"><div>
+<section class="panel"><div style="display:flex;justify-content:space-between;gap:12px"><h2>Gráfico de velas e médias</h2><small id="last">Aguardando dados OHLC</small></div><canvas id="chart"></canvas><p class="muted">Azul: EMA 9 · Amarelo: EMA 21 · Linhas calculadas apenas para os dados selecionados.</p></section>
+<section class="panel"><h2>Histórico e validação</h2><div id="history" class="log">Sem registros.</div></section>
+</div><aside>
+<section class="panel"><h2>Leitura do mercado</h2><div class="stat"><div class="tile"><small>Tendência</small><strong id="trend">—</strong></div><div class="tile"><small>RSI 14</small><strong id="rsi">—</strong></div><div class="tile"><small>ATR 14</small><strong id="atr">—</strong></div><div class="tile"><small>Distância EMA</small><strong id="distance">—</strong></div></div><h3>Condições identificadas</h3><p id="signal">Importe velas históricas ou teste com dados fictícios.</p><span id="decision" class="badge">AGUARDAR DADOS</span></section>
+<section class="panel"><h2>Visão multi-timeframe</h2><div id="multi"></div><p class="muted">Períodos derivados das mesmas velas M1; não são fontes independentes.</p></section>
+<section class="panel"><h2>Fonte e segurança</h2><p id="feedInfo">Não há conexão ativa com a IQ Option.</p><p class="warning">Nenhuma ordem de compra ou venda é executada. Dados DEMO são fictícios. Os resultados não são recomendações de investimento.</p></section>
+</aside></div></main><div class="footer">Versão web inicial · Projeto independente · Sem uso de credenciais ou envio de ordens. Conector IQ Option não oficial ainda depende de validação externa.</div>
+<script>
+const $=id=>document.getElementById(id), database={}, timeframes=[1,5,10,15,60];let offset=0;
+function setLabel(id,text){$(id).textContent=text}
+function ema(a,p){const k=2/(p+1);let x=NaN;return a.map((v,i)=>{if(i===0)x=v;else x=v*k+x*(1-k);return x})}
+function rsi(c,p=14){if(c.length<p+1)return null;let up=0,down=0;for(let i=c.length-p;i<c.length;i++){const d=c[i]-c[i-1];up+=Math.max(0,d);down+=Math.max(0,-d)}return down===0?(up===0?50:100):100-100/(1+up/down)}
+function atr(a,p=14){if(a.length<p+1)return null;let s=0;for(let i=a.length-p;i<a.length;i++){const x=a[i],prev=a[i-1].c;s+=Math.max(x.h-x.l,Math.abs(x.h-prev),Math.abs(x.l-prev))}return s/p}
+function aggregate(a,n){if(n===1)return a;const buckets=new Map();for(const c of a){const key=Math.floor(c.t/(n*60))*n*60;const b=buckets.get(key);if(!b)buckets.set(key,{t:key,o:c.o,h:c.h,l:c.l,c:c.c,count:1});else{b.h=Math.max(b.h,c.h);b.l=Math.min(b.l,c.l);b.c=c.c;b.count++}}return Array.from(buckets.values()).filter(x=>x.count===n)}
+function metrics(a){if(a.length<30)return null;let c=a.map(v=>v.c),e9=ema(c,9),e21=ema(c,21),last=a.length-1;const spread=(e9[last]-e21[last]),prior=(e9[last-5]-e21[last-5]);return {e9,e21,rsi:rsi(c),atr:atr(a),spread,trend:spread>0&&e9[last]>e9[last-5]?'ALTA':spread<0&&e9[last]<e9[last-5]?'BAIXA':'MISTO',widen:Math.abs(spread)>Math.abs(prior)}}
+function validate(records){let out=records.map(r=>({t:Number(r.t),o:Number(r.o),h:Number(r.h),l:Number(r.l),c:Number(r.c)})).filter(v=>Object.values(v).every(Number.isFinite)&&v.t>0&&v.h>=Math.max(v.o,v.c)&&v.l<=Math.min(v.o,v.c)&&v.h>=v.l).sort((a,b)=>a.t-b.t);out=out.filter((c,i)=>i===0||c.t!==out[i-1].t);const now=Date.now()/1000;return out.filter(c=>c.t+60<=now)}
+function readCSV(s){const lines=s.trim().split(/\r?\n/);const delim=lines[0].includes(';')?';':',';const headers=lines[0].toLowerCase().replace(/"/g,'').split(delim).map(v=>v.trim());const index=(...options)=>options.map(v=>headers.indexOf(v)).find(v=>v>=0);const it=index('timestamp','time','date'),io=index('open'),ih=index('high'),il=index('low'),ic=index('close');if([it,io,ih,il,ic].some(v=>v===undefined))throw Error('CSV precisa das colunas timestamp,open,high,low,close');return validate(lines.slice(1).map(line=>{const p=line.split(delim).map(v=>v.trim().replace(/"/g,''));let t=Number(p[it]);if(!Number.isFinite(t)||!t)t=Date.parse(p[it])/1000;if(t>1e11)t/=1000;return{t,o:p[io],h:p[ih],l:p[il],c:p[ic]}}))}
+function demoData(){let seed=1234,p=151.2;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};const start=Math.floor(Date.now()/60000)*60-720*60;return Array.from({length:720},(_,i)=>{let o=p;let delta=(rnd()-.48)*.16;p=o+delta;return{t:start+i*60,o,h:Math.max(o,p)+rnd()*.045,l:Math.min(o,p)-rnd()*.045,c:p}})}
+function draw(a,m){const can=$('chart'),dpr=window.devicePixelRatio||1;let width=can.clientWidth,height=can.clientHeight;can.width=Math.round(width*dpr);can.height=Math.round(height*dpr);const ctx=can.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,width,height);if(!a.length){ctx.fillStyle='#91a6c0';ctx.font='14px sans-serif';ctx.fillText('Importe dados para exibir o gráfico.',20,45);return}
+let right=Math.max(0,a.length-offset),left=Math.max(0,right-80),vis=a.slice(left,right);if(!vis.length)return;let hi=Math.max(...vis.map(x=>x.h)),lo=Math.min(...vis.map(x=>x.l)),margin=(hi-lo)*.12||.001;hi+=margin;lo-=margin;const y=p=>15+(hi-p)/(hi-lo)*(height-32),x=i=>15+i*(width-50)/vis.length,bar=Math.max(2,(width-50)/vis.length*.64);ctx.strokeStyle='#23374e';ctx.lineWidth=1;for(let i=0;i<5;i++){let yy=15+i*(height-32)/4;ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(width,yy);ctx.stroke();ctx.fillStyle='#8ca2ba';ctx.font='10px sans-serif';ctx.fillText((hi-i*(hi-lo)/4).toFixed(5),width-72,yy-4)}
+vis.forEach((b,i)=>{let col=b.c>=b.o?'#3bcaa0':'#f17183';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x(i)+bar/2,y(b.h));ctx.lineTo(x(i)+bar/2,y(b.l));ctx.stroke();ctx.fillRect(x(i),Math.min(y(b.o),y(b.c)),bar,Math.max(1,Math.abs(y(b.o)-y(b.c))))});
+function line(key,color){if(!m)return;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();vis.forEach((b,i)=>{const val=m[key][left+i];if(i===0)ctx.moveTo(x(i)+bar/2,y(val));else ctx.lineTo(x(i)+bar/2,y(val))});ctx.stroke()}line('e9','#38a8ee');line('e21','#f4c945')}
+function render(){const key=$('asset').value,raw=database[key],a=raw?aggregate(raw.candles,Number($('tf').value)):[],m=metrics(a);draw(a,m);const badge=$('sourceBadge');setLabel('sourceBadge',raw?(raw.type==='demo'?'DEMO FICTÍCIO':'CSV IMPORTADO'):'SEM DADOS');badge.style.borderColor=raw?.type==='demo'?'#a97739':'#58708c';setLabel('last',a.length?new Date(a[a.length-1].t*1000).toLocaleString('pt-BR'):'Aguardando dados OHLC');setLabel('trend',m?.trend||'—');setLabel('rsi',m?.rsi?.toFixed(1)||'—');setLabel('atr',m?.atr?.toFixed(5)||'—');setLabel('distance',m?(Math.abs(m.spread)).toFixed(5):'—');
+if(!m){setLabel('signal','Aguardando pelo menos 30 velas fechadas para avaliação.');setLabel('decision','AGUARDAR DADOS')}else{const b=a[a.length-1],c=a[a.length-2];const contrary=m.trend==='ALTA'&&b.c<b.o||m.trend==='BAIXA'&&b.c>b.o;const wick=Math.max(0,b.h-Math.max(b.o,b.c));setLabel('signal','Tendência '+m.trend.toLowerCase()+'. Distância EMA '+(m.widen?'expandindo':'não expandindo')+'. '+(contrary?'Última vela contrária à tendência. ':'')+'Pavio superior '+wick.toFixed(5)+'. A leitura não prevê a próxima vela.');setLabel('decision','OBSERVAÇÃO — SEM SINAL VALIDADO')}
+setLabel('feedInfo',raw?(raw.type==='demo'?'Dados simulados no navegador. Nenhuma cotação real foi recebida.':'Dados importados localmente por CSV; não há alimentação automática nem confirmação de equivalência com a IQ Option.'):'Não há conexão ativa com a IQ Option.');$('multi').innerHTML=raw?timeframes.map(n=>{const mm=metrics(aggregate(raw.candles,n));return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #27344b;padding:8px 0"><span>M'+n+'</span><strong>'+ (mm?.trend||'INSUFICIENTE')+'</strong></div>'}).join(''):'Aguardando velas M1';$('history').innerHTML=raw?'<div>Origem: '+(raw.type==='demo'?'demonstração':'arquivo CSV')+'</div><div>Velas M1 fechadas: '+raw.candles.length+'</div><div>Último preço: '+raw.candles.at(-1)?.c.toFixed(5)+'</div>':'Sem registros.'}
+$('demo').onclick=()=>{database[$('asset').value]={type:'demo',candles:demoData()};offset=0;render()};$('clear').onclick=()=>{delete database[$('asset').value];offset=0;render()};$('csv').onchange=async(e)=>{const f=e.target.files[0];if(!f)return;try{const candles=readCSV(await f.text());if(candles.length<30)throw Error('Menos de 30 velas M1 fechadas válidas.');database[$('asset').value]={type:'csv',candles};offset=0;render()}catch(err){alert('Erro de CSV: '+err.message)}e.target.value=''};$('asset').onchange=()=>{offset=0;render()};$('tf').onchange=()=>{offset=0;render()};$('older').onclick=()=>{offset+=30;render()};$('newer').onclick=()=>{offset=Math.max(0,offset-30);render()};window.onresize=render;render();
+</script></body></html>
