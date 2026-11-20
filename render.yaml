@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: negociatrader-collector
+    runtime: python
+    plan: free
+    rootDir: connector
+    buildCommand: pip install -r requirements.txt
+    startCommand: python collector_service.py
+    healthCheckPath: /health
+    envVars:
+      - key: IQ_ACCOUNT_KIND
+        value: NOT_CONFIRMED
+      - key: IQ_ASSET
+        value: EURJPY-OTC
+      - key: FEED_API_URL
+        value: https://doceepoesia.pages.dev
+      - key: IQ_EMAIL
+        sync: false
+      - key: IQ_PASSWORD
+        sync: false
+      - key: FEED_INGEST_TOKEN
+        sync: false
